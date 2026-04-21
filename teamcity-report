@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set +euo pipefail # Exit on any non-zero exit code, and error on use of undefined var
+set -euo pipefail # Exit on any non-zero exit code, and error on use of undefined var
 # Note that the trivy commands will still exit with code 0 when vulns are detected unless --exit-code is set.
 
 # Usage
@@ -13,8 +13,13 @@ Options:
 Examples:
   # Scan an image with default settings
   trivy teamcity-report image python:3.8 output.html
+  trivy teamcity-report image nginx:1.27,redis:7,postgres:16 output.html
   # Scan a local dir for vulns and misconfiguration
   trivy teamcity-report fs /path/to/dir output.html --scanners vuln,config
+  trivy teamcity-report fs /path/to/dira,/path/to/dirb output.html --scanners vuln,config
+  # Scan kubernetes targets
+  trivy teamcity-report kubernetes cluster_a output.html
+  trivy teamcity-report kubernetes cluster_a,cluster_b output.html
 EOS
   exit
 }
@@ -35,6 +40,79 @@ error_message() {
   echo -e "\033[0;31m$1  \t\033[0m"
 }
 
+function scan_single {
+  info_message "Scanning and exporting HTML report to '$output_file'"
+  trivy $trivy_command --format template --template @$BASEDIR/html.tpl --output "$output_file" "${trivy_params[@]}" $target
+
+  info_message "Printing summary:"
+  trivy $trivy_command --quiet "${trivy_params[@]}" $target
+
+  info_message "Emitting teamcity messages:"
+  # Explcitiy use all severities so that reporting of statistic messages is accurate
+  trivy $trivy_command $target --quiet --format json --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL "${trivy_params[@]}" | "$BASEDIR/export_teamcity_messages.py"
+}
+
+function scan_multi {
+  local workdir
+  workdir=$(mktemp -d)
+
+  local merged_json="$workdir/merged.json"
+  local json_files=()
+
+  IFS=',' read -ra targets <<< "$target"
+
+  local idx=0
+  local item
+
+  for item in "${targets[@]}"; do
+    [[ -z "$item" ]] && continue
+
+    idx=$((idx + 1))
+    local json_file="$workdir/$idx.json"
+    json_files+=("$json_file")
+
+    info_message "Scanning $item"
+
+    trivy $trivy_command $item --quiet --format json --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL "${trivy_params[@]}" > "$json_file" || {
+      error_message "Trivy scan failed for target: $item"
+      exit 1
+    }
+  done
+
+  if [[ ${#json_files[@]} -eq 0 ]]; then
+    error_message "No valid targets after parsing CSV"
+    exit 1
+  fi
+
+  info_message "Merging JSON results"
+
+  jq -s '
+    . as $docs
+    | ($docs[0] // {}) as $first
+    | $first + {
+        Results: ($docs | map(.Results // []) | add)
+      }
+  ' "${json_files[@]}" > "$merged_json" || {
+    error_message "Failed to merge JSON results"
+    exit 1
+  }
+
+  info_message "Scanning and exporting HTML report to '$output_file'"
+  trivy convert --format template --template @$BASEDIR/html.tpl --output "$output_file" "$merged_json" || {
+    error_message "Failed to generate HTML from merged JSON"
+    exit 1
+  }
+
+  info_message "Printing summary:"
+  trivy convert --format table "$merged_json" || {
+    error_message "Failed to generate summary from merged JSON"
+    exit 1
+  }
+
+  info_message "Emitting teamcity messages:"
+  cat "$merged_json" | "$BASEDIR/export_teamcity_messages.py"
+}
+
 function scan {
   BASEDIR=$(dirname "$0")
 
@@ -50,22 +128,19 @@ function scan {
   info_message "output_file = $output_file"
   shift
 
-  trivy_params="$@"
-  info_message "trivy_params = $trivy_params"
+  trivy_params=("$@")
+  info_message "trivy_params = ${trivy_params[*]}"
 
   if [[ $output_file == "" ]]; then
     error_message "ERROR - no output file specified, please specify.\nExample: trivy teamcity-report image affinda/ocr output.html"
     exit 1
   fi
 
-  info_message "Scanning and exporting HTML report to '$output_file'"
-  trivy $trivy_command --format template --template @$BASEDIR/html.tpl --output "$output_file" "$@" $target
-#
-  info_message "Printing summary:"
-  trivy $trivy_command --quiet "$@" $target
-  info_message "Emitting teamcity messages:"
-  # Explcitiy use all severities so that reporting of statistic messages is accurate
-  trivy $trivy_command $target --quiet --format json --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL "$@" | "$BASEDIR/export_teamcity_messages.py"
+  if [[ "$target" == *,* ]]; then
+    scan_multi
+  else
+    scan_single
+  fi
 }
 
 if [[ ($# -eq 0) || ($1 == "--help") || ($1 == "-h") ]]; then
