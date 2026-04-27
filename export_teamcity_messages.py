@@ -60,7 +60,7 @@ def process_output(results: Dict) -> None:
     if vuln_scan:
         for severity in Severity:
             vuln_count = len([v for v in all_vulns if v["Severity"] == severity])
-            print(f"##teamcity[buildStatisticValue key='VULNERABLITY_COUNT_{severity}' value='{vuln_count}']")
+            print(f"##teamcity[buildStatisticValue key='VULNERABILITY_COUNT_{severity}' value='{vuln_count}']")
 
     if config_scan:
         for severity in Severity:
