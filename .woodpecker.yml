@@ -22,8 +22,9 @@ steps:
       - test
 
   - name: release
-    image: ghcr.io/cli/cli:2.74.2
+    image: debian:bookworm-slim
     commands:
+      - apt-get update && apt-get install -y --no-install-recommends gh ca-certificates
       - export GH_TOKEN="$CI_NETRC_PASSWORD"
       - gh release create "$CI_COMMIT_TAG" dist/*.tar.gz --verify-tag --generate-notes --repo "$CI_REPO" --title "$CI_COMMIT_TAG"
     depends_on:

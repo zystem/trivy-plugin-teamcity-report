@@ -85,8 +85,8 @@ To build locally on Linux amd64, install `musl-tools` (provides `musl-gcc`), the
 nimble release -y
 ```
 
-This creates `dist/trivy-plugin-teamcity-report-0.8.0.tar.gz` without publishing.
+This creates `dist/trivy-plugin-teamcity-report-0.8.1.tar.gz` without publishing.
 For a new release, update the version in `teamcity_report.nimble`, `plugin.yaml`
-and its archive URL, commit, and push a matching tag such as `0.8.0` (no `v` prefix).
+and its archive URL, commit, and push a matching tag such as `0.8.1` (no `v` prefix).
 The pipeline checks version/tag consistency before publishing. The tag must be new;
-published releases are not overwritten. Version 0.8.0 is prepared in this checkout.
+published releases are not overwritten. Version 0.8.1 is prepared in this checkout.
