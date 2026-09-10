@@ -72,7 +72,7 @@ A Nim fake Trivy keeps the suite offline and independent of vulnerability databa
 
 ### Releases and CI/CD
 
-The Woodpecker pipeline follows `nim-posixglob`: tests on pull requests and pushes
+The Woodpecker pipeline follows `nim-posixglob`: tests on manual runs, pull requests and pushes
 to `main`, then a release build; tag events additionally publish a GitHub release.
 The build step reruns the CLI tests against the static binary.
 See [Woodpecker workflow syntax](https://woodpecker-ci.org/docs/usage/workflow-syntax).
