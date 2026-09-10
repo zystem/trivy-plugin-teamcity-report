@@ -78,9 +78,9 @@ The build step reruns the CLI tests against the static binary.
 See [Woodpecker workflow syntax](https://woodpecker-ci.org/docs/usage/workflow-syntax).
 Enable this repository in Woodpecker. In repository Settings → Secrets, add
 `github_token` containing a GitHub token with Contents: Read and write access to
-this repository, and enable the `tag` event for the secret. The release step maps
-it to `GH_TOKEN` using `from_secret`. Leave the image filter empty when using
-commands in the step. Do not use the internal clone credential `CI_NETRC_PASSWORD`.
+this repository, and enable the `tag` event for the secret. The release plugin receives
+it through `settings.api-key.from_secret`. Set the allowed plugin image to
+`woodpeckerci/plugin-release`. Do not use the internal clone credential `CI_NETRC_PASSWORD`.
 See [Woodpecker secrets](https://woodpecker-ci.org/docs/usage/secrets).
 
 To build locally on Linux amd64, install `musl-tools` (provides `musl-gcc`), then run:
@@ -89,8 +89,8 @@ To build locally on Linux amd64, install `musl-tools` (provides `musl-gcc`), the
 nimble release -y
 ```
 
-This creates `dist/trivy-plugin-teamcity-report-0.8.1.tar.gz` without publishing.
+This creates `dist/trivy-plugin-teamcity-report-0.8.2.tar.gz` without publishing.
 For a new release, update the version in `teamcity_report.nimble`, `plugin.yaml`
-and its archive URL, commit, and push a matching tag such as `0.8.1` (no `v` prefix).
-The pipeline checks version/tag consistency before publishing. The tag must be new;
-published releases are not overwritten. Version 0.8.1 is prepared in this checkout.
+and its archive URL, commit, and push a matching tag such as `0.8.2` (no `v` prefix).
+The pipeline checks version/tag consistency before publishing. Use a new tag for each release. Existing release metadata is preserved, and
+uploading an asset with an existing name fails. Version 0.8.2 is prepared in this checkout.

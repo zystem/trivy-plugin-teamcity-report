@@ -1,6 +1,6 @@
 import std/[os, strutils]
 
-version = "0.8.1"
+version = "0.8.2"
 author = "Andrii Zahriadskyi"
 description = "Trivy HTML reports and TeamCity build statistics"
 license = "MIT"
