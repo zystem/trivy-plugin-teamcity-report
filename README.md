@@ -76,8 +76,12 @@ The Woodpecker pipeline follows `nim-posixglob`: tests on manual runs, pull requ
 to `main`, then a release build; tag events additionally publish a GitHub release.
 The build step reruns the CLI tests against the static binary.
 See [Woodpecker workflow syntax](https://woodpecker-ci.org/docs/usage/workflow-syntax).
-Enable this repository in Woodpecker; publication uses `CI_NETRC_PASSWORD` as
-`GH_TOKEN`, as in the reference project, and requires repository contents write access.
+Enable this repository in Woodpecker. In repository Settings → Secrets, add
+`github_token` containing a GitHub token with Contents: Read and write access to
+this repository, and enable the `tag` event for the secret. The release step maps
+it to `GH_TOKEN` using `from_secret`. Leave the image filter empty when using
+commands in the step. Do not use the internal clone credential `CI_NETRC_PASSWORD`.
+See [Woodpecker secrets](https://woodpecker-ci.org/docs/usage/secrets).
 
 To build locally on Linux amd64, install `musl-tools` (provides `musl-gcc`), then run:
 
