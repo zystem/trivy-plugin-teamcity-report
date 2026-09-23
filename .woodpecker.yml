@@ -1,4 +1,6 @@
 when:
+  - event: cron
+    cron: renovate
   - event: manual
   - event: pull_request
   - event: push
@@ -34,3 +36,16 @@ steps:
       - build
     when:
       - event: tag
+
+  - name: renovate
+    image: renovate/renovate:latest
+    commands:
+      - renovate "$CI_REPO"
+    environment:
+      RENOVATE_PLATFORM: github
+      RENOVATE_TOKEN:
+        from_secret: renovate_token
+    when:
+      - event: cron
+        cron: renovate
+      - event: manual

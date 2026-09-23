@@ -30,8 +30,13 @@ task release, "Build and package the release archive without publishing":
       "Release tag must match plugin.yaml version (" & version & ")")
   buildStaticBinary()
   mkDir "dist"
+  let stageDir = "build/release-package"
+  mkDir stageDir
+  exec "cp build/teamcity-report " & quoteShell(stageDir / "teamcity-report")
+  exec "cp LICENSE " & quoteShell(stageDir / "LICENSE")
   let archive = "dist/trivy-plugin-teamcity-report-" & version & ".tar.gz"
-  exec "tar -czf " & quoteShell(archive) & " -C build teamcity-report"
+  exec "tar -czf " & quoteShell(archive) & " -C " & quoteShell(stageDir) &
+    " teamcity-report LICENSE"
   echo "Release archive created at " & archive
 
 task test, "Run unit and CLI integration tests":
